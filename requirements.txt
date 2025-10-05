@@ -1,0 +1,7 @@
+
+requests==2.32.3
+pandas==2.2.2
+pydantic==2.9.2
+python-dotenv==1.0.1
+# Bonus-ის შემთხვევაში!
+schedule==1.2.2

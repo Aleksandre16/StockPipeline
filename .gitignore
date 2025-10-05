@@ -1,0 +1,42 @@
+# --- Python cache and build ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+build/
+dist/
+
+# --- Virtual environments ---
+.venv/
+venv/
+ENV/
+env/
+
+# --- Logs and runtime artifacts ---
+logs/
+*.log
+
+# --- OS / IDE specific ---
+.DS_Store
+.idea/
+.vscode/
+
+# --- Environment variables ---
+#.env
+#.env.*
+#!.env.example
+
+# --- Local database ---
+*.db
+*.sqlite
+
+# --- Data lake files ---
+raw_data/
+*.json
+*.csv
+!raw_data/.gitkeep
+
+# --- Notebook checkpoints ---
+.ipynb_checkpoints/
