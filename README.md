@@ -1,92 +1,93 @@
-# 🧠 StockPipeline — Alpha Vantage ETL (AAPL, GOOG, MSFT)
+# StockPipeline — Alpha Vantage ETL (AAPL, GOOG, MSFT)
 
-A complete ETL pipeline that **extracts daily stock prices** from [Alpha Vantage](https://www.alphavantage.co), **transforms** them with `pandas`, **validates** using `Pydantic`, and **loads** into a local **SQLite** database with upserts and de-duplication.
+A complete ETL pipeline that extracts daily stock prices from [Alpha Vantage](https://www.alphavantage.co), transforms them with `pandas`, validates using `Pydantic`, and loads into a local SQLite database with upserts and de-duplication.
 
-Author: [@aleksandre16](https://github.com/aleksandre16)  
-Project: Batch 9 Data Engineering Intern Assignment  
-Location: Tbilisi, Georgia  
+**Author:** [aleksandre16](https://github.com/aleksandre16)  
 
 ---
 
-## 1) 🧩 Prerequisites
-- Python 3.10+
-- PyCharm or any IDE
-- Free Alpha Vantage API key → [Get one here](https://www.alphavantage.co/support/#api-key)
+## Prerequisites
+
+- Python 3.10 or higher
+- PyCharm or any IDE of your choice
+- A free Alpha Vantage API key — [register here](https://www.alphavantage.co/support/#api-key)
 
 ---
 
-## 2) ⚙️ Quickstart
+## Quickstart
 
 ```bash
-# clone or unzip project
+# Clone or unzip the project
 cd StockPipeline
 
-# create virtual environment
+# Create and activate a virtual environment
 python -m venv .venv
-
-# activate it
 source .venv/bin/activate        # macOS / Linux
-# or
 .venv\Scripts\activate           # Windows
 
-# install dependencies
+# Install dependencies
 pip install -r requirements.txt
 
-# copy environment file
+# Set up environment variables
 cp .env.example .env
-# edit .env and paste your Alpha Vantage key
+# Open .env and paste your Alpha Vantage API key
 
-# run the ETL pipeline
+# Run the ETL pipeline
 python etl/pipeline.py
 ```
 
 ---
 
-## 3) 📊 What Happens
-- Fetches **daily stock data** for AAPL, GOOG, and MSFT.
-- Saves raw JSON in:  
-  ```
-  raw_data/SYMBOL_YYYY-MM-DD.json
-  ```
-- Transforms into a `pandas` DataFrame with columns:
-  ```
-  date, open, high, low, close, volume, daily_change_percentage
-  ```
-- Loads data into the SQLite database `stock.db` (created automatically).
-- Avoids duplicates via:
-  ```sql
-  CREATE UNIQUE INDEX ux_symbol_date ON stock_daily_data(symbol, date);
-  ON CONFLICT(symbol, date) DO UPDATE;
-  ```
-- Adds an `extraction_timestamp` for audit tracking.
+## Pipeline Behavior
+
+1. Fetches daily stock data for AAPL, GOOG, and MSFT from the Alpha Vantage API.
+2. Saves raw JSON responses to `raw_data/SYMBOL_YYYY-MM-DD.json`.
+3. Transforms the raw data into a `pandas` DataFrame with the following columns: `date`, `open`, `high`, `low`, `close`, `volume`, `daily_change_percentage`.
+4. Loads the transformed data into `stock.db` (created automatically if absent).
+5. Prevents duplicate records using a unique index and upsert logic:
+
+```sql
+CREATE UNIQUE INDEX ux_symbol_date ON stock_daily_data(symbol, date);
+ON CONFLICT(symbol, date) DO UPDATE;
+```
+
+6. Attaches an `extraction_timestamp` to each record for audit tracking.
 
 ---
 
-## 4) ⏰ Scheduling (Optional)
+## Scheduling (Optional)
 
-You can automate daily runs using **Python’s `schedule` library** or **cron**.
+The pipeline can be automated to run on a daily schedule using either the bundled scheduler or a system cron job.
 
 ### Option A — Python Scheduler
+
 ```bash
 python etl/schedule_run.py
 ```
-*(runs every day at 18:00 local time — configurable inside the file)*
 
-### Option B — Cron Job (example for 23:00 Tbilisi time)
+Runs every day at 18:00 local time by default. The schedule is configurable inside the file.
+
+### Option B — Cron Job
+
+The following example runs the pipeline daily at 23:00 Tbilisi time:
+
 ```
-0 23 * * * /usr/bin/python3 /Users/yourname/Desktop/Projects/StockPipeline/etl/pipeline.py >> /Users/yourname/Desktop/Projects/StockPipeline/logs/cron.log 2>&1
+0 23 * * * /usr/bin/python3 /path/to/StockPipeline/etl/pipeline.py >> /path/to/StockPipeline/logs/cron.log 2>&1
 ```
-> 💡 If you see “no such file or directory” — create the `logs/` folder first:
-> ```bash
-> mkdir -p /Users/yourname/Desktop/Projects/StockPipeline/logs
-> ```
+
+If you encounter a "no such file or directory" error, create the `logs/` directory first:
+
+```bash
+mkdir -p /path/to/StockPipeline/logs
+```
 
 ---
 
-## 5) 🌍 Environment Variables
-Create a `.env` file in the project root using the template below:
+## Environment Variables
 
-```
+Create a `.env` file in the project root using the following template:
+
+```env
 ALPHAVANTAGE_API_KEY=your_api_key_here
 DATABASE_URL=sqlite:///stock.db
 DATA_LAKE_DIR=raw_data
@@ -98,23 +99,25 @@ TZ=Asia/Tbilisi
 
 ---
 
-## 6) 🗄 Database Schema
+## Database Schema
+
 | Column | Type | Description |
-|---------|------|-------------|
+|---|---|---|
 | id | INTEGER | Primary key |
-| symbol | TEXT | Stock symbol |
+| symbol | TEXT | Stock ticker symbol |
 | date | TEXT | Trading date |
 | open_price | REAL | Opening price |
 | high_price | REAL | Highest price |
 | low_price | REAL | Lowest price |
 | close_price | REAL | Closing price |
 | volume | INTEGER | Trading volume |
-| daily_change_percentage | REAL | ((close - open) / open) * 100 |
-| extraction_timestamp | TEXT | Time of data extraction |
+| daily_change_percentage | REAL | `((close - open) / open) * 100` |
+| extraction_timestamp | TEXT | UTC timestamp of data extraction |
 
 ---
 
-## 7) 📦 Requirements
+## Dependencies
+
 ```
 pandas
 requests
@@ -125,15 +128,15 @@ schedule
 
 ---
 
-## 8) 🧠 Summary
-✔️ Fully functional ETL pipeline (Extract → Transform → Load)  
-✔️ Validates with Pydantic  
-✔️ Stores raw JSON and transformed data  
-✔️ Idempotent upserts (no duplicates)  
-✔️ Optional daily scheduling via `schedule` or `cron`  
+## Summary
+
+- Fully functional ETL pipeline (Extract, Transform, Load)
+- Schema validation with Pydantic
+- Raw JSON archiving alongside structured database records
+- Idempotent upserts with no duplicate records
+- Optional daily scheduling via `schedule` library or cron
 
 ---
 
-**Author:** [aleksandre16](https://github.com/aleksandre16)  
 **License:** MIT  
 **Purpose:** Educational — Data Engineering ETL design example, Sweeft (TASK)
